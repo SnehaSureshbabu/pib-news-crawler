@@ -63,7 +63,7 @@ async def main():
         # -------- NEWS ITEM --------
         if line.startswith("* [") and current_ministry:
             title = line.split("](", 1)[0].replace("* [", "").strip()
-            link = line.split("](", 1)[1].split(")", 1)[0].strip()
+            link = line.split("](", 1)[1].split(")", 1)[0].split(" ", 1)[0].strip()
 
             # ---------- URL SAFETY FIX ----------
             if not link:
