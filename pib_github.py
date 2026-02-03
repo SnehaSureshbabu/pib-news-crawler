@@ -4,7 +4,6 @@ from crawl4ai import AsyncWebCrawler
 from astrapy import DataAPIClient
 from datetime import datetime
 
-# ------------------ ASTRA DB SETUP ------------------
 ASTRA_DB_TOKEN = os.getenv("ASTRA_DB_TOKEN")
 ASTRA_DB_ENDPOINT = os.getenv("ASTRA_DB_ENDPOINT")
 COLLECTION_NAME = "pib_press_releases"
@@ -12,7 +11,6 @@ COLLECTION_NAME = "pib_press_releases"
 client = DataAPIClient(ASTRA_DB_TOKEN)
 db = client.get_database_by_api_endpoint(ASTRA_DB_ENDPOINT)
 collection = db.get_collection(COLLECTION_NAME)
-# ---------------------------------------------------
 
 
 async def main():
@@ -47,34 +45,32 @@ async def main():
 
         clean = line.lstrip("*# ").strip()
 
-        # -------- MINISTRY DETECTION --------
-        is_ministry = (
-            clean.startswith("Ministry")
-            or clean.endswith("Office")
-            or clean == "AYUSH"
-            or clean == "PIB Headquarters"
-            or clean.isupper()
-        )
-
-        if is_ministry and len(clean) < 80:
+        # ---- ministry ----
+        if (
+            (clean.startswith("Ministry")
+             or clean.endswith("Office")
+             or clean == "AYUSH"
+             or clean == "PIB Headquarters"
+             or clean.isupper())
+            and len(clean) < 80
+        ):
             current_ministry = clean
             continue
 
-        # -------- NEWS ITEM --------
+        # ---- news item ----
         if line.startswith("* [") and current_ministry:
             title = line.split("](", 1)[0].replace("* [", "").strip()
-
             raw_link = line.split("](", 1)[1].split(")", 1)[0]
 
-            # 🔥 FINAL FIX — keep ONLY the URL
+            # 🔥 STRIP everything after space
             link = raw_link.split(" ", 1)[0].strip()
 
-            # normalize relative URLs
+            # 🔥 FORCE absolute URL
             if link.startswith("/"):
                 link = "https://www.pib.gov.in" + link
 
-            # HARD validation
-            if not link.startswith("http"):
+            # 🔥 FINAL HARD FILTER — THIS IS THE KEY
+            if "PressReleasePage.aspx" not in link:
                 continue
 
             existing = collection.find_one({"url": link})
@@ -93,8 +89,9 @@ async def main():
 
     print("\n✅ Done")
     print(f"🆕 New items added: {added_count}")
-    print(f"⏭️ Skipped (already existed): {skipped_count}")
+    print(f"⏭️ Skipped: {skipped_count}")
 
 
 if __name__ == "__main__":
     asyncio.run(main())
+
