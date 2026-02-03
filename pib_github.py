@@ -14,6 +14,7 @@ db = client.get_database_by_api_endpoint(ASTRA_DB_ENDPOINT)
 collection = db.get_collection(COLLECTION_NAME)
 # ---------------------------------------------------
 
+
 async def main():
     print("⏳ Fetching PIB press releases...")
 
@@ -31,8 +32,8 @@ async def main():
         print("No news found")
         return
 
+    # Trim header/footer
     text = text.split("Displaying", 1)[1]
-
     for stop in ["![Link mygov.in]", "RTI and Contact Us"]:
         if stop in text:
             text = text.split(stop, 1)[0]
@@ -62,14 +63,18 @@ async def main():
         # -------- NEWS ITEM --------
         if line.startswith("* [") and current_ministry:
             title = line.split("](", 1)[0].replace("* [", "").strip()
-            link = line.split("](", 1)[1].split(")", 1)[0]
+            link = line.split("](", 1)[1].split(")", 1)[0].strip()
 
-            # ✅ Normalize URL
+            # ---------- URL SAFETY FIX ----------
+            if not link:
+                continue
+
             if link.startswith("/"):
                 link = "https://www.pib.gov.in" + link
 
             if not link.startswith("http"):
                 continue
+            # -----------------------------------
 
             existing = collection.find_one({"url": link})
 
@@ -88,6 +93,7 @@ async def main():
     print("\n✅ Done")
     print(f"🆕 New items added: {added_count}")
     print(f"⏭️ Skipped (already existed): {skipped_count}")
+
 
 if __name__ == "__main__":
     asyncio.run(main())
