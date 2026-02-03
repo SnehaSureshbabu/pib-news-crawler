@@ -32,7 +32,7 @@ async def main():
         print("No news found")
         return
 
-    # Trim header/footer
+    # Trim header & footer
     text = text.split("Displaying", 1)[1]
     for stop in ["![Link mygov.in]", "RTI and Contact Us"]:
         if stop in text:
@@ -62,20 +62,24 @@ async def main():
 
         # -------- NEWS ITEM --------
         if line.startswith("* [") and current_ministry:
+            # Extract title
             title = line.split("](", 1)[0].replace("* [", "").strip()
-            link = line.split("](", 1)[1].split(")", 1)[0].split(" ", 1)[0].strip()
 
-            # ---------- URL SAFETY FIX ----------
-            if not link:
-                continue
+            # Extract raw link section
+            raw_link = line.split("](", 1)[1].split(")", 1)[0]
 
+            # ✅ KEEP ONLY URL (remove quoted title)
+            link = raw_link.split(" ", 1)[0].strip()
+
+            # ✅ Normalize URL
             if link.startswith("/"):
                 link = "https://www.pib.gov.in" + link
 
+            # ✅ HARD validation (THIS IS THE KEY FIX)
             if not link.startswith("http"):
                 continue
-            # -----------------------------------
 
+            # ---- DB operations ONLY after validation ----
             existing = collection.find_one({"url": link})
 
             if existing:
