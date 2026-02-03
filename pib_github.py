@@ -69,7 +69,7 @@ async def main():
             link = "https://www.pib.gov.in" + link
 
         if not link.startswith("http"):
-        continue
+            continue
 
         existing = collection.find_one({"url": link})
 
