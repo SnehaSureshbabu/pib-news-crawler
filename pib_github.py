@@ -66,7 +66,7 @@ async def main():
 
             # 🔒 FIX: normalize URL
         if link.startswith("/"):
-        link = "https://www.pib.gov.in" + link
+            link = "https://www.pib.gov.in" + link
 
         if not link.startswith("http"):
         continue
