@@ -16,25 +16,30 @@ collection = db.get_collection(COLLECTION_NAME)
 
 BASE_URL = "https://www.pib.gov.in"
 
-def normalize_pib_url(raw_link: str) -> str | None:
+
+def extract_clean_url(raw_link: str) -> str | None:
     """
-    Converts any PIB link into a valid absolute URL.
-    Returns None if link is invalid.
+    PIB markdown puts URL + title together.
+    This function extracts ONLY the real URL.
     """
+
     if not raw_link:
         return None
 
     raw_link = raw_link.strip()
 
-    # Case 1: already full URL
+    # 🔥 CRITICAL FIX: remove trailing title in quotes
+    if '"' in raw_link:
+        raw_link = raw_link.split('"', 1)[0].strip()
+
+    # Absolute URL
     if raw_link.startswith("http://") or raw_link.startswith("https://"):
         return raw_link
 
-    # Case 2: relative PIB link
+    # Relative PIB URL
     if raw_link.startswith("/"):
         return BASE_URL + raw_link
 
-    # Anything else is invalid
     return None
 
 
@@ -55,8 +60,8 @@ async def main():
         print("No news found")
         return
 
-    # Trim header/footer junk
     text = text.split("Displaying", 1)[1]
+
     for stop in ["![Link mygov.in]", "RTI and Contact Us"]:
         if stop in text:
             text = text.split(stop, 1)[0]
@@ -90,12 +95,11 @@ async def main():
         title = line.split("](", 1)[0].replace("* [", "").strip()
         raw_link = line.split("](", 1)[1].split(")", 1)[0]
 
-        link = normalize_pib_url(raw_link)
+        link = extract_clean_url(raw_link)
 
-        # 🚨 CRITICAL SAFETY CHECK
+        # 🚨 ABSOLUTE SAFETY CHECK
         if not link:
             continue
-
         if not link.startswith("https://www.pib.gov.in/PressReleasePage.aspx"):
             continue
 
