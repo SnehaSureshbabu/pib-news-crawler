@@ -1,0 +1,30 @@
+name: PIB Daily News Crawler
+
+on:
+  schedule:
+    - cron: "30 3 * * *"   # Runs daily at 9:00 AM IST
+  workflow_dispatch:      # Allows manual run
+
+jobs:
+  run-crawler:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+
+      - name: Run crawler
+        env:
+          ASTRA_DB_TOKEN: ${{ secrets.ASTRA_DB_TOKEN }}
+          ASTRA_DB_ENDPOINT: ${{ secrets.ASTRA_DB_ENDPOINT }}
+        run: |
+          python pib_github.py
