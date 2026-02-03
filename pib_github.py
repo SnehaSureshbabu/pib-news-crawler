@@ -64,7 +64,14 @@ async def main():
             title = line.split("](", 1)[0].replace("* [", "").strip()
             link = line.split("](", 1)[1].split(")", 1)[0]
 
-            existing = collection.find_one({"url": link})
+            # 🔒 FIX: normalize URL
+    if link.startswith("/"):
+        link = "https://www.pib.gov.in" + link
+
+    if not link.startswith("http"):
+        continue
+
+    existing = collection.find_one({"url": link})
 
             if existing:
                 skipped_count += 1
