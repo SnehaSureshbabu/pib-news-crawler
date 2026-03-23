@@ -1,3 +1,0 @@
-crawl4ai
-playwright
-astrapy
